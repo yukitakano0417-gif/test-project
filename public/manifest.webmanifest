@@ -1,0 +1,32 @@
+{
+  "name": "買い物メモ",
+  "short_name": "買い物メモ",
+  "description": "品名・金額・日付を記録するシンプルな買い物メモアプリ",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f3f4f6",
+  "theme_color": "#2563eb",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
