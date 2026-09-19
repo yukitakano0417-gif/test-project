@@ -1,0 +1,42 @@
+name: iOS Build Check
+
+on:
+  push:
+    branches:
+      - "**"
+    paths:
+      - "TodoNotes/**"
+      - "TodoNotes.xcodeproj/**"
+      - ".github/workflows/ios-build.yml"
+  pull_request:
+    paths:
+      - "TodoNotes/**"
+      - "TodoNotes.xcodeproj/**"
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build (iOS Simulator)
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: List available simulators
+        run: xcrun simctl list devicetypes
+
+      - name: Build TodoNotes for iOS Simulator
+        run: |
+          xcodebuild \
+            -project TodoNotes.xcodeproj \
+            -scheme TodoNotes \
+            -sdk iphonesimulator \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            clean build
