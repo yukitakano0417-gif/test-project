@@ -14,6 +14,9 @@ on:
       - "TodoNotes.xcodeproj/**"
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build and screenshot (iOS Simulator)
@@ -83,9 +86,23 @@ jobs:
           sleep 1
           xcrun simctl io "$UDID" screenshot screenshots/todonotes-dark.png
 
-      - name: Upload screenshots
+      - name: Upload screenshots as build artifact
         uses: actions/upload-artifact@v4
         with:
           name: screenshots
           path: screenshots/*.png
           retention-days: 14
+
+      - name: Commit screenshots into the repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          mkdir -p docs/screenshots
+          cp screenshots/*.png docs/screenshots/
+          git add docs/screenshots
+          if git diff --cached --quiet; then
+            echo "No screenshot changes to commit"
+          else
+            git commit -m "Update simulator screenshots"
+            git push
+          fi
