@@ -16,8 +16,9 @@ on:
 
 jobs:
   build:
-    name: Build (iOS Simulator)
+    name: Build and screenshot (iOS Simulator)
     runs-on: macos-15
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
@@ -25,9 +26,6 @@ jobs:
 
       - name: Show Xcode version
         run: xcodebuild -version
-
-      - name: List available simulators
-        run: xcrun simctl list devicetypes
 
       - name: Build TodoNotes for iOS Simulator
         run: |
@@ -37,6 +35,57 @@ jobs:
             -sdk iphonesimulator \
             -configuration Debug \
             -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             clean build
+
+      - name: Boot an iOS Simulator
+        id: sim
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          for runtime, devices in data['devices'].items():
+              if 'iOS' not in runtime:
+                  continue
+              for d in devices:
+                  if d.get('isAvailable') and d['name'].startswith('iPhone'):
+                      print(d['udid'])
+                      raise SystemExit
+          ")
+          if [ -z "$UDID" ]; then
+            echo "No available iPhone simulator found" >&2
+            xcrun simctl list devices available
+            exit 1
+          fi
+          echo "Using simulator: $UDID"
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+
+      - name: Install and launch the app with sample data
+        env:
+          UDID: ${{ steps.sim.outputs.udid }}
+        run: |
+          APP_PATH="build/Build/Products/Debug-iphonesimulator/TodoNotes.app"
+          xcrun simctl install "$UDID" "$APP_PATH"
+          SIMCTL_CHILD_SEED_SAMPLE_DATA=1 xcrun simctl launch --terminate-running-process "$UDID" com.yukitakano.todonotes
+          sleep 4
+
+      - name: Capture screenshots
+        env:
+          UDID: ${{ steps.sim.outputs.udid }}
+        run: |
+          mkdir -p screenshots
+          xcrun simctl io "$UDID" screenshot screenshots/todonotes-light.png
+          xcrun simctl ui "$UDID" appearance dark
+          sleep 1
+          xcrun simctl io "$UDID" screenshot screenshots/todonotes-dark.png
+
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: screenshots/*.png
+          retention-days: 14
