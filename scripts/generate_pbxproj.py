@@ -595,6 +595,7 @@ def app_config(config_id, name):
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = TodoNotes/TodoNotes.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
 \t\t\t\tCURRENT_PROJECT_VERSION = 1;
+\t\t\t\tDEVELOPMENT_LANGUAGE = ja;
 \t\t\t\tDEVELOPMENT_ASSET_PATHS = "\\"TodoNotes/Preview Content\\"";
 \t\t\t\tENABLE_PREVIEWS = YES;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
@@ -627,6 +628,7 @@ def widget_config(config_id, name):
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = TodoNotesWidget/TodoNotesWidget.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
 \t\t\t\tCURRENT_PROJECT_VERSION = 1;
+\t\t\t\tDEVELOPMENT_LANGUAGE = ja;
 \t\t\t\tGENERATE_INFOPLIST_FILE = NO;
 \t\t\t\tINFOPLIST_FILE = TodoNotesWidget/Info.plist;
 \t\t\t\tIPHONEOS_DEPLOYMENT_TARGET = {DEPLOYMENT_TARGET};
