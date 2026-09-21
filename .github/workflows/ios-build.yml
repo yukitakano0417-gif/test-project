@@ -1,0 +1,140 @@
+name: iOS Build Check
+
+on:
+  push:
+    branches:
+      - "**"
+    paths:
+      - "TodoNotes/**"
+      - "TodoNotesWidget/**"
+      - "TodoNotes.xcodeproj/**"
+      - ".github/workflows/ios-build.yml"
+  pull_request:
+    paths:
+      - "TodoNotes/**"
+      - "TodoNotesWidget/**"
+      - "TodoNotes.xcodeproj/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build and screenshot (iOS Simulator)
+    runs-on: macos-15
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Build TodoNotes for iOS Simulator
+        run: |
+          xcodebuild \
+            -project TodoNotes.xcodeproj \
+            -scheme TodoNotes \
+            -sdk iphonesimulator \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            clean build
+
+      - name: Verify the widget extension was embedded
+        run: |
+          APP_PATH="build/Build/Products/Debug-iphonesimulator/TodoNotes.app"
+          if [ ! -d "$APP_PATH/PlugIns/TodoNotesWidgetExtension.appex" ]; then
+            echo "TodoNotesWidgetExtension.appex was not embedded in the app bundle" >&2
+            ls -R "$APP_PATH"
+            exit 1
+          fi
+          echo "Widget extension embedded correctly."
+
+      - name: Boot an iOS Simulator
+        id: sim
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          for runtime, devices in data['devices'].items():
+              if 'iOS' not in runtime:
+                  continue
+              for d in devices:
+                  if d.get('isAvailable') and d['name'].startswith('iPhone'):
+                      print(d['udid'])
+                      raise SystemExit
+          ")
+          if [ -z "$UDID" ]; then
+            echo "No available iPhone simulator found" >&2
+            xcrun simctl list devices available
+            exit 1
+          fi
+          echo "Using simulator: $UDID"
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+
+      - name: Install and launch the app with sample data
+        env:
+          UDID: ${{ steps.sim.outputs.udid }}
+        run: |
+          APP_PATH="build/Build/Products/Debug-iphonesimulator/TodoNotes.app"
+          xcrun simctl install "$UDID" "$APP_PATH"
+          SIMCTL_CHILD_SEED_SAMPLE_DATA=1 xcrun simctl launch --terminate-running-process "$UDID" com.yukitakano.todonotes
+          sleep 4
+
+      - name: Capture screenshots
+        env:
+          UDID: ${{ steps.sim.outputs.udid }}
+        run: |
+          mkdir -p screenshots
+          xcrun simctl io "$UDID" screenshot screenshots/todonotes-light.png
+          xcrun simctl ui "$UDID" appearance dark
+          sleep 1
+          xcrun simctl io "$UDID" screenshot screenshots/todonotes-dark.png
+          xcrun simctl ui "$UDID" appearance light
+
+      - name: Capture widget preview screenshot
+        env:
+          UDID: ${{ steps.sim.outputs.udid }}
+        run: |
+          # There's no simctl API to drive the real Lock Screen widget
+          # gallery, so WidgetPreviewHarness (DEBUG-only) renders the
+          # exact same TodoNotesWidgetView the extension uses, at each
+          # supported family's real size, inside the app itself.
+          SIMCTL_CHILD_SEED_SAMPLE_DATA=1 SIMCTL_CHILD_WIDGET_PREVIEW=1 \
+            xcrun simctl launch --terminate-running-process "$UDID" com.yukitakano.todonotes
+          sleep 4
+          xcrun simctl io "$UDID" screenshot screenshots/todonotes-widget-preview.png
+
+      - name: Upload screenshots as build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: screenshots/*.png
+          retention-days: 14
+
+      - name: Commit screenshots into the repo
+        # pull_request runs check out a detached HEAD (the merge commit),
+        # not a branch, so `git push` there always fails with "You are
+        # not currently on a branch." The push-triggered run on the same
+        # commit already commits the screenshots; this step only needs
+        # to run for that event.
+        if: github.event_name == 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          mkdir -p docs/screenshots
+          cp screenshots/*.png docs/screenshots/
+          git add docs/screenshots
+          if git diff --cached --quiet; then
+            echo "No screenshot changes to commit"
+          else
+            git commit -m "Update simulator screenshots"
+            git push
+          fi
