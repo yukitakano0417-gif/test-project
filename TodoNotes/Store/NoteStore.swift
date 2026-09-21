@@ -15,6 +15,10 @@ final class NoteStore: ObservableObject {
         #if DEBUG
         if ProcessInfo.processInfo.environment["SEED_SAMPLE_DATA"] == "1" {
             notes = Self.sampleNotes
+            // Persist it too: a later scenePhase→.active transition calls
+            // reload(), which would otherwise overwrite this in-memory-only
+            // seed with whatever (nothing) is actually on disk.
+            NotesRepository.save(notes)
         }
         #endif
     }

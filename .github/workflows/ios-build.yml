@@ -120,6 +120,12 @@ jobs:
           retention-days: 14
 
       - name: Commit screenshots into the repo
+        # pull_request runs check out a detached HEAD (the merge commit),
+        # not a branch, so `git push` there always fails with "You are
+        # not currently on a branch." The push-triggered run on the same
+        # commit already commits the screenshots; this step only needs
+        # to run for that event.
+        if: github.event_name == 'push'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
