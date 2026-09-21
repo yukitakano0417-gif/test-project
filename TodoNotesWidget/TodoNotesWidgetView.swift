@@ -1,12 +1,26 @@
 import SwiftUI
 import WidgetKit
 
+/// Reads the family WidgetKit assigns at render time. `widgetFamily` is a
+/// read-only environment key (there's no public setter), so previewing
+/// other families from outside a real widget host — see
+/// `WidgetPreviewHarness` — goes through `TodoNotesWidgetContent`
+/// directly instead of trying to override this environment value.
 struct TodoNotesWidgetView: View {
     @Environment(\.widgetFamily) private var family
     let entry: NoteEntry
 
     var body: some View {
-        if let note = entry.note {
+        TodoNotesWidgetContent(family: family, note: entry.note)
+    }
+}
+
+struct TodoNotesWidgetContent: View {
+    let family: WidgetFamily
+    let note: TodoNote?
+
+    var body: some View {
+        if let note {
             content(for: note)
         } else {
             emptyState
