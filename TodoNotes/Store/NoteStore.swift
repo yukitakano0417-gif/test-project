@@ -53,7 +53,7 @@ final class NoteStore: ObservableObject {
         TodoNote(
             color: .charcoal,
             items: [
-                TodoItem(text: "家賃を払う"),
+                TodoItem(text: "家賃を払う", dueDate: Date().addingTimeInterval(86400)),
                 TodoItem(text: "電気代を払う")
             ]
         ),
@@ -66,7 +66,7 @@ final class NoteStore: ObservableObject {
         TodoNote(
             color: .purple,
             items: [
-                TodoItem(text: "誕生日プレゼントを探す"),
+                TodoItem(text: "誕生日プレゼントを探す", dueDate: Date().addingTimeInterval(-86400)),
                 TodoItem(text: "カードを書く", isDone: true)
             ]
         )

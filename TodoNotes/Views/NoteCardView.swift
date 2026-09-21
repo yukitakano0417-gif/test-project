@@ -10,7 +10,15 @@ struct NoteCardView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
+            HStack(spacing: 4) {
+                if let item = earliestUpcomingItem, let dueDate = item.dueDate {
+                    let isOverdue = dueDate < Date()
+                    Label(dueDate.formatted(.relative(presentation: .named)), systemImage: "bell.fill")
+                        .font(.system(.caption2, design: .rounded))
+                        .lineLimit(1)
+                        .foregroundStyle(isOverdue ? Color.red : note.color.foreground)
+                        .opacity(isOverdue ? 1 : 0.75)
+                }
                 Spacer()
                 Button(action: onOpen) {
                     Image(systemName: "pencil.circle.fill")
@@ -96,6 +104,12 @@ struct NoteCardView: View {
 
     private var hasContent: Bool {
         note.items.contains { !$0.text.trimmingCharacters(in: .whitespaces).isEmpty }
+    }
+
+    private var earliestUpcomingItem: TodoItem? {
+        note.items
+            .filter { !$0.isDone && $0.dueDate != nil }
+            .min { ($0.dueDate ?? .distantFuture) < ($1.dueDate ?? .distantFuture) }
     }
 
     /// A small, stable tilt derived from the note's identity so the board reads

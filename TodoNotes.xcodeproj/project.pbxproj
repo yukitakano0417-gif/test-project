@@ -20,6 +20,8 @@
 		7B73BFB45726E5A89B99E983 /* NotesRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1E928987EB5FF1C5407B31 /* NotesRepository.swift */; };
 		E96029999C8A64CC96FA44CF /* WidgetKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A95CDCD7A95690D7122A519 /* WidgetKind.swift */; };
 		1A59750776B18800715088FC /* WidgetKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A95CDCD7A95690D7122A519 /* WidgetKind.swift */; };
+		08B0A2529893A23C0312766C /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6663B114BC22E51E2A587E12 /* NotificationManager.swift */; };
+		D6994741991B81ECFE034277 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6663B114BC22E51E2A587E12 /* NotificationManager.swift */; };
 		9A81FCEF49149712E6913705 /* NoteStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A30F95DBC79B296548C4C30 /* NoteStore.swift */; };
 		E0B09970F69D13E96A700CB9 /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F25D4F640738B7582567C29 /* Haptics.swift */; };
 		3CB7B16EA6CB3890C2765D27 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9279C08A49E42A255FF98B6 /* ContentView.swift */; };
@@ -72,6 +74,7 @@
 		2EA98C553A5D964A9AB986AC /* AppGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppGroup.swift; sourceTree = "<group>"; };
 		BA1E928987EB5FF1C5407B31 /* NotesRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesRepository.swift; sourceTree = "<group>"; };
 		6A95CDCD7A95690D7122A519 /* WidgetKind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetKind.swift; sourceTree = "<group>"; };
+		6663B114BC22E51E2A587E12 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		7A30F95DBC79B296548C4C30 /* NoteStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteStore.swift; sourceTree = "<group>"; };
 		0F25D4F640738B7582567C29 /* Haptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Haptics.swift; sourceTree = "<group>"; };
 		C9279C08A49E42A255FF98B6 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -154,6 +157,7 @@
 				2EA98C553A5D964A9AB986AC /* AppGroup.swift */,
 				BA1E928987EB5FF1C5407B31 /* NotesRepository.swift */,
 				6A95CDCD7A95690D7122A519 /* WidgetKind.swift */,
+				6663B114BC22E51E2A587E12 /* NotificationManager.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -317,6 +321,7 @@
 				C733DAFD5CB9F2AC85BD14F4 /* AppGroup.swift in Sources */,
 				20D95FB9A0BBDD0145C89672 /* NotesRepository.swift in Sources */,
 				E96029999C8A64CC96FA44CF /* WidgetKind.swift in Sources */,
+				08B0A2529893A23C0312766C /* NotificationManager.swift in Sources */,
 				9A81FCEF49149712E6913705 /* NoteStore.swift in Sources */,
 				E0B09970F69D13E96A700CB9 /* Haptics.swift in Sources */,
 				3CB7B16EA6CB3890C2765D27 /* ContentView.swift in Sources */,
@@ -340,6 +345,7 @@
 				981CA9A1016C3DBD6B4E8712 /* AppGroup.swift in Sources */,
 				7B73BFB45726E5A89B99E983 /* NotesRepository.swift in Sources */,
 				1A59750776B18800715088FC /* WidgetKind.swift in Sources */,
+				D6994741991B81ECFE034277 /* NotificationManager.swift in Sources */,
 				9FA7A3CA9D97987F978802F0 /* TodoNotesWidget.swift in Sources */,
 				A1BD5B669705C6F821CA4666 /* Provider.swift in Sources */,
 				F5232B669E4BB4A7D1A0B1D8 /* TodoNotesWidgetView.swift in Sources */,

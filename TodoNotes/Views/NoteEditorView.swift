@@ -10,7 +10,12 @@ struct NoteEditorView: View {
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var previewImage: UIImage?
     @State private var isShowingDeleteConfirmation = false
+    @State private var reminderTarget: ReminderTarget?
     @FocusState private var focusedItemID: UUID?
+
+    private struct ReminderTarget: Identifiable {
+        let id: UUID
+    }
 
     private let isNew: Bool
 
@@ -102,39 +107,64 @@ struct NoteEditorView: View {
                 }
                 Button("キャンセル", role: .cancel) {}
             }
+            .sheet(item: $reminderTarget) { target in
+                if let index = draft.items.firstIndex(where: { $0.id == target.id }) {
+                    ReminderSheet(dueDate: $draft.items[index].dueDate)
+                }
+            }
         }
     }
 
     private func itemRow(item: Binding<TodoItem>) -> some View {
-        HStack(spacing: 10) {
-            Button {
-                Haptics.tap()
-                item.wrappedValue.isDone.toggle()
-            } label: {
-                Image(systemName: item.wrappedValue.isDone ? "checkmark.square.fill" : "square")
-                    .font(.system(.title3))
-            }
-            .buttonStyle(.plain)
-
-            TextField("やることを入力", text: item.text, axis: .vertical)
-                .font(.system(.body, design: .rounded))
-                .foregroundStyle(item.wrappedValue.isDone ? draft.color.foreground.opacity(0.5) : draft.color.foreground)
-                .focused($focusedItemID, equals: item.wrappedValue.id)
-                .submitLabel(.next)
-                .onSubmit {
-                    addItem()
-                }
-
-            if draft.items.count > 1 {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 10) {
                 Button {
-                    draft.items.removeAll { $0.id == item.wrappedValue.id }
+                    Haptics.tap()
+                    item.wrappedValue.isDone.toggle()
                 } label: {
-                    Image(systemName: "minus.circle.fill")
-                        .font(.system(.body))
-                        .opacity(0.6)
+                    Image(systemName: item.wrappedValue.isDone ? "checkmark.square.fill" : "square")
+                        .font(.system(.title3))
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(Text("この項目を削除"))
+
+                TextField("やることを入力", text: item.text, axis: .vertical)
+                    .font(.system(.body, design: .rounded))
+                    .foregroundStyle(item.wrappedValue.isDone ? draft.color.foreground.opacity(0.5) : draft.color.foreground)
+                    .focused($focusedItemID, equals: item.wrappedValue.id)
+                    .submitLabel(.next)
+                    .onSubmit {
+                        addItem()
+                    }
+
+                Button {
+                    reminderTarget = ReminderTarget(id: item.wrappedValue.id)
+                } label: {
+                    Image(systemName: item.wrappedValue.dueDate != nil ? "bell.fill" : "bell")
+                        .font(.system(.body))
+                        .opacity(item.wrappedValue.dueDate != nil ? 1 : 0.4)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text(item.wrappedValue.dueDate != nil ? "リマインダーを編集" : "リマインダーを設定"))
+
+                if draft.items.count > 1 {
+                    Button {
+                        draft.items.removeAll { $0.id == item.wrappedValue.id }
+                    } label: {
+                        Image(systemName: "minus.circle.fill")
+                            .font(.system(.body))
+                            .opacity(0.6)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text("この項目を削除"))
+                }
+            }
+
+            if let dueDate = item.wrappedValue.dueDate {
+                let isOverdue = dueDate < Date() && !item.wrappedValue.isDone
+                Label(dueDate.formatted(date: .abbreviated, time: .shortened), systemImage: "clock")
+                    .font(.system(.caption2, design: .rounded))
+                    .foregroundStyle(isOverdue ? Color.red : draft.color.foreground.opacity(0.7))
+                    .padding(.leading, 32)
             }
         }
         .padding(.vertical, 6)
@@ -212,5 +242,54 @@ struct NoteEditorView: View {
             store.updateNote(draft)
         }
         dismiss()
+    }
+}
+
+private struct ReminderSheet: View {
+    @Binding var dueDate: Date?
+    @Environment(\.dismiss) private var dismiss
+    @State private var selection: Date
+
+    init(dueDate: Binding<Date?>) {
+        self._dueDate = dueDate
+        self._selection = State(initialValue: dueDate.wrappedValue ?? Date().addingTimeInterval(3600))
+    }
+
+    var body: some View {
+        NavigationStack {
+            DatePicker(
+                "日時",
+                selection: $selection,
+                in: Date()...,
+                displayedComponents: [.date, .hourAndMinute]
+            )
+            .datePickerStyle(.graphical)
+            .padding()
+            .navigationTitle("リマインダー")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("キャンセル") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("設定") {
+                        dueDate = selection
+                        dismiss()
+                    }
+                    .fontWeight(.semibold)
+                }
+                if dueDate != nil {
+                    ToolbarItem(placement: .bottomBar) {
+                        Button("リマインダーを削除", role: .destructive) {
+                            dueDate = nil
+                            dismiss()
+                        }
+                    }
+                }
+            }
+            .onAppear {
+                NotificationManager.requestAuthorizationIfNeeded()
+            }
+        }
     }
 }

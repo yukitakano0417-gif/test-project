@@ -57,6 +57,7 @@ enum NotesRepository {
             try? FileManager.default.copyItem(at: notesFileURL, to: backupFileURL)
         }
         try? data.write(to: notesFileURL, options: .atomic)
+        NotificationManager.resync(with: notes)
     }
 
     private static func decodeNotes(from url: URL) -> [TodoNote]? {

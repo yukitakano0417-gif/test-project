@@ -38,6 +38,7 @@ SWIFT_FILES = [
     ("TodoNotes/Shared/AppGroup.swift", "TodoNotes/Shared", {"app", "widget"}),
     ("TodoNotes/Shared/NotesRepository.swift", "TodoNotes/Shared", {"app", "widget"}),
     ("TodoNotes/Shared/WidgetKind.swift", "TodoNotes/Shared", {"app", "widget"}),
+    ("TodoNotes/Shared/NotificationManager.swift", "TodoNotes/Shared", {"app", "widget"}),
     ("TodoNotes/Store/NoteStore.swift", "TodoNotes/Store", {"app"}),
     ("TodoNotes/Store/Haptics.swift", "TodoNotes/Store", {"app"}),
     ("TodoNotes/Views/ContentView.swift", "TodoNotes/Views", {"app"}),
