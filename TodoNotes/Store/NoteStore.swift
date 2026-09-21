@@ -6,12 +6,23 @@ final class NoteStore: ObservableObject {
     @Published private(set) var notes: [TodoNote] = []
 
     private let fileURL: URL
+    private let backupFileURL: URL
     private let imagesDirectory: URL
     private let imageCache = NSCache<NSString, UIImage>()
+
+    /// Bump this and add a migration branch in `decodeNotes(from:)` if
+    /// `TodoNote`'s shape ever changes in a way older saved data can't decode.
+    private static let currentSchemaVersion = 1
+
+    private struct PersistedNotes: Codable {
+        var version: Int
+        var notes: [TodoNote]
+    }
 
     init() {
         let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         fileURL = documents.appendingPathComponent("notes.json")
+        backupFileURL = documents.appendingPathComponent("notes.backup.json")
         imagesDirectory = documents.appendingPathComponent("NoteImages", isDirectory: true)
         try? FileManager.default.createDirectory(at: imagesDirectory, withIntermediateDirectories: true)
         load()
@@ -60,7 +71,7 @@ final class NoteStore: ObservableObject {
         TodoNote(
             color: .green,
             items: [
-                TodoItem(text: "植物に水やり")
+                TodoItem(text: "植物に水やり", isDone: true)
             ]
         ),
         TodoNote(
@@ -113,12 +124,13 @@ final class NoteStore: ObservableObject {
     // MARK: - Images
 
     func saveImage(_ image: UIImage) -> String? {
-        guard let data = image.jpegData(compressionQuality: 0.85) else { return nil }
+        let resized = image.resizedIfNeeded(maxDimension: 1600)
+        guard let data = resized.jpegData(compressionQuality: 0.8) else { return nil }
         let fileName = "\(UUID().uuidString).jpg"
         let url = imagesDirectory.appendingPathComponent(fileName)
         do {
             try data.write(to: url, options: .atomic)
-            imageCache.setObject(image, forKey: fileName as NSString)
+            imageCache.setObject(resized, forKey: fileName as NSString)
             return fileName
         } catch {
             return nil
@@ -141,21 +153,62 @@ final class NoteStore: ObservableObject {
     }
 
     // MARK: - Persistence
+    //
+    // Never let a read failure silently wipe the user's notes. A future
+    // schema change, a partially-written file, or disk corruption should
+    // fall back to the last-known-good backup rather than resetting to [].
 
     private func load() {
-        guard let data = try? Data(contentsOf: fileURL) else {
-            notes = []
+        if let notes = Self.decodeNotes(from: fileURL) {
+            self.notes = notes
             return
         }
+        if let notes = Self.decodeNotes(from: backupFileURL) {
+            self.notes = notes
+            save() // restore the primary file from the backup we just recovered
+            return
+        }
+        notes = []
+    }
+
+    private static func decodeNotes(from url: URL) -> [TodoNote]? {
+        guard let data = try? Data(contentsOf: url) else { return nil }
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        notes = (try? decoder.decode([TodoNote].self, from: data)) ?? []
+        if let wrapped = try? decoder.decode(PersistedNotes.self, from: data) {
+            return wrapped.notes
+        }
+        // Falls back to the pre-versioning format (a bare [TodoNote] array)
+        // so upgrading to the versioned format never loses existing data.
+        return try? decoder.decode([TodoNote].self, from: data)
     }
 
     private func save() {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
-        guard let data = try? encoder.encode(notes) else { return }
+        let payload = PersistedNotes(version: Self.currentSchemaVersion, notes: notes)
+        guard let data = try? encoder.encode(payload) else { return }
+        // Keep one prior generation on disk before overwriting, so a bad
+        // write or a future decode failure has something to recover from.
+        if FileManager.default.fileExists(atPath: fileURL.path) {
+            try? FileManager.default.removeItem(at: backupFileURL)
+            try? FileManager.default.copyItem(at: fileURL, to: backupFileURL)
+        }
         try? data.write(to: fileURL, options: .atomic)
+    }
+}
+
+private extension UIImage {
+    /// Downscales images from the photo library (often 4000px+) before we
+    /// persist them, so a single attached photo doesn't cost several MB.
+    func resizedIfNeeded(maxDimension: CGFloat) -> UIImage {
+        let largestSide = max(size.width, size.height)
+        guard largestSide > maxDimension else { return self }
+        let scale = maxDimension / largestSide
+        let newSize = CGSize(width: size.width * scale, height: size.height * scale)
+        let renderer = UIGraphicsImageRenderer(size: newSize)
+        return renderer.image { _ in
+            draw(in: CGRect(origin: .zero, size: newSize))
+        }
     }
 }

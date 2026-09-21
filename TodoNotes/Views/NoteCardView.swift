@@ -14,7 +14,7 @@ struct NoteCardView: View {
                 Spacer()
                 Button(action: onOpen) {
                     Image(systemName: "pencil.circle.fill")
-                        .font(.system(size: 18))
+                        .font(.system(.subheadline))
                         .opacity(0.55)
                 }
                 .buttonStyle(.plain)
@@ -39,11 +39,11 @@ struct NoteCardView: View {
                         store.toggleItem(noteID: note.id, itemID: item.id)
                     }
                 } label: {
-                    HStack(alignment: .top, spacing: 6) {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
                         Image(systemName: item.isDone ? "checkmark.square.fill" : "square")
-                            .font(.system(size: 13))
+                            .font(.system(.subheadline))
                         Text(item.text)
-                            .font(.system(size: 14, weight: .medium, design: .rounded))
+                            .font(.system(.subheadline, design: .rounded, weight: .medium))
                             .strikethrough(item.isDone)
                             .lineLimit(1)
                             .multilineTextAlignment(.leading)
@@ -57,19 +57,26 @@ struct NoteCardView: View {
             }
 
             if note.items.count > maxPreviewItems {
-                Text("+\(note.items.count - maxPreviewItems) more")
-                    .font(.system(size: 12, design: .rounded))
+                Text("他 \(note.items.count - maxPreviewItems) 件")
+                    .font(.system(.caption2, design: .rounded))
                     .opacity(0.7)
             }
 
             Spacer(minLength: 0)
 
-            HStack {
+            HStack(spacing: 4) {
                 Spacer()
-                Text("\(note.remainingCount) 件残り")
-                    .font(.system(size: 11, design: .rounded))
-                    .opacity(0.7)
+                if hasContent && note.remainingCount == 0 {
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(.system(.caption2))
+                    Text("すべて完了")
+                        .font(.system(.caption2, design: .rounded, weight: .semibold))
+                } else {
+                    Text("\(note.remainingCount) 件残り")
+                        .font(.system(.caption2, design: .rounded))
+                }
             }
+            .opacity(0.75)
         }
         .foregroundStyle(note.color.foreground)
         .padding(14)
@@ -85,6 +92,10 @@ struct NoteCardView: View {
 
     private var previewItems: [TodoItem] {
         Array(note.items.filter { !$0.text.trimmingCharacters(in: .whitespaces).isEmpty }.prefix(maxPreviewItems))
+    }
+
+    private var hasContent: Bool {
+        note.items.contains { !$0.text.trimmingCharacters(in: .whitespaces).isEmpty }
     }
 
     /// A small, stable tilt derived from the note's identity so the board reads

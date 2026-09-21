@@ -58,7 +58,7 @@ struct ContentView: View {
                         isCreatingNote = true
                     } label: {
                         Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 22))
+                            .font(.system(.title2))
                     }
                     .accessibilityLabel(Text("新規メモを作成"))
                 }

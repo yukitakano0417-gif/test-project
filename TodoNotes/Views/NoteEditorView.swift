@@ -112,7 +112,7 @@ struct NoteEditorView: View {
                 item.wrappedValue.isDone.toggle()
             } label: {
                 Image(systemName: item.wrappedValue.isDone ? "checkmark.square.fill" : "square")
-                    .font(.system(size: 20))
+                    .font(.system(.title3))
             }
             .buttonStyle(.plain)
 
@@ -130,7 +130,7 @@ struct NoteEditorView: View {
                     draft.items.removeAll { $0.id == item.wrappedValue.id }
                 } label: {
                     Image(systemName: "minus.circle.fill")
-                        .font(.system(size: 18))
+                        .font(.system(.body))
                         .opacity(0.6)
                 }
                 .buttonStyle(.plain)
@@ -155,7 +155,7 @@ struct NoteEditorView: View {
                             removePhoto()
                         } label: {
                             Image(systemName: "xmark.circle.fill")
-                                .font(.system(size: 22))
+                                .font(.system(.title2))
                                 .foregroundStyle(.white, .black.opacity(0.6))
                         }
                         .padding(6)
