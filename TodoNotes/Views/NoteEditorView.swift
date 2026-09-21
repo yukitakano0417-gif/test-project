@@ -127,7 +127,7 @@ struct NoteEditorView: View {
                 }
                 .buttonStyle(.plain)
 
-                TextField("やることを入力", text: item.text, axis: .vertical)
+                TextField("やることを入力", text: item.text)
                     .font(.system(.body, design: .rounded))
                     .foregroundStyle(item.wrappedValue.isDone ? draft.color.foreground.opacity(0.5) : draft.color.foreground)
                     .focused($focusedItemID, equals: item.wrappedValue.id)
