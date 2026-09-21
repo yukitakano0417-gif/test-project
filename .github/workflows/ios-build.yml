@@ -6,11 +6,13 @@ on:
       - "**"
     paths:
       - "TodoNotes/**"
+      - "TodoNotesWidget/**"
       - "TodoNotes.xcodeproj/**"
       - ".github/workflows/ios-build.yml"
   pull_request:
     paths:
       - "TodoNotes/**"
+      - "TodoNotesWidget/**"
       - "TodoNotes.xcodeproj/**"
   workflow_dispatch:
 
@@ -42,6 +44,16 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             clean build
+
+      - name: Verify the widget extension was embedded
+        run: |
+          APP_PATH="build/Build/Products/Debug-iphonesimulator/TodoNotes.app"
+          if [ ! -d "$APP_PATH/PlugIns/TodoNotesWidgetExtension.appex" ]; then
+            echo "TodoNotesWidgetExtension.appex was not embedded in the app bundle" >&2
+            ls -R "$APP_PATH"
+            exit 1
+          fi
+          echo "Widget extension embedded correctly."
 
       - name: Boot an iOS Simulator
         id: sim
@@ -85,6 +97,20 @@ jobs:
           xcrun simctl ui "$UDID" appearance dark
           sleep 1
           xcrun simctl io "$UDID" screenshot screenshots/todonotes-dark.png
+          xcrun simctl ui "$UDID" appearance light
+
+      - name: Capture widget preview screenshot
+        env:
+          UDID: ${{ steps.sim.outputs.udid }}
+        run: |
+          # There's no simctl API to drive the real Lock Screen widget
+          # gallery, so WidgetPreviewHarness (DEBUG-only) renders the
+          # exact same TodoNotesWidgetView the extension uses, at each
+          # supported family's real size, inside the app itself.
+          SIMCTL_CHILD_SEED_SAMPLE_DATA=1 SIMCTL_CHILD_WIDGET_PREVIEW=1 \
+            xcrun simctl launch --terminate-running-process "$UDID" com.yukitakano.todonotes
+          sleep 4
+          xcrun simctl io "$UDID" screenshot screenshots/todonotes-widget-preview.png
 
       - name: Upload screenshots as build artifact
         uses: actions/upload-artifact@v4

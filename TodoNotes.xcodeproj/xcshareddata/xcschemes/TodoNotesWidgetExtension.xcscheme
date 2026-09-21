@@ -14,20 +14,6 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "8E22C9DF07BC22919959C7E6"
-               BuildableName = "TodoNotes.app"
-               BlueprintName = "TodoNotes"
-               ReferencedContainer = "container:TodoNotes.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
                BlueprintIdentifier = "4E5D78DBFDBF31F40E0A7D7D"
                BuildableName = "TodoNotesWidgetExtension.appex"
                BlueprintName = "TodoNotesWidgetExtension"
@@ -58,9 +44,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "8E22C9DF07BC22919959C7E6"
-            BuildableName = "TodoNotes.app"
-            BlueprintName = "TodoNotes"
+            BlueprintIdentifier = "4E5D78DBFDBF31F40E0A7D7D"
+            BuildableName = "TodoNotesWidgetExtension.appex"
+            BlueprintName = "TodoNotesWidgetExtension"
             ReferencedContainer = "container:TodoNotes.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -75,9 +61,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "8E22C9DF07BC22919959C7E6"
-            BuildableName = "TodoNotes.app"
-            BlueprintName = "TodoNotes"
+            BlueprintIdentifier = "4E5D78DBFDBF31F40E0A7D7D"
+            BuildableName = "TodoNotesWidgetExtension.appex"
+            BlueprintName = "TodoNotesWidgetExtension"
             ReferencedContainer = "container:TodoNotes.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

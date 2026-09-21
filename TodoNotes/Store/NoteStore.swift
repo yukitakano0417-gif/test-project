@@ -1,31 +1,16 @@
 import Foundation
 import UIKit
+import WidgetKit
 
 @MainActor
 final class NoteStore: ObservableObject {
     @Published private(set) var notes: [TodoNote] = []
 
-    private let fileURL: URL
-    private let backupFileURL: URL
-    private let imagesDirectory: URL
     private let imageCache = NSCache<NSString, UIImage>()
 
-    /// Bump this and add a migration branch in `decodeNotes(from:)` if
-    /// `TodoNote`'s shape ever changes in a way older saved data can't decode.
-    private static let currentSchemaVersion = 1
-
-    private struct PersistedNotes: Codable {
-        var version: Int
-        var notes: [TodoNote]
-    }
-
     init() {
-        let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        fileURL = documents.appendingPathComponent("notes.json")
-        backupFileURL = documents.appendingPathComponent("notes.backup.json")
-        imagesDirectory = documents.appendingPathComponent("NoteImages", isDirectory: true)
-        try? FileManager.default.createDirectory(at: imagesDirectory, withIntermediateDirectories: true)
-        load()
+        try? FileManager.default.createDirectory(at: NotesRepository.imagesDirectory, withIntermediateDirectories: true)
+        notes = NotesRepository.load()
 
         #if DEBUG
         if ProcessInfo.processInfo.environment["SEED_SAMPLE_DATA"] == "1" {
@@ -100,7 +85,7 @@ final class NoteStore: ObservableObject {
 
     func deleteNote(_ note: TodoNote) {
         if let fileName = note.imageFileName {
-            try? FileManager.default.removeItem(at: imagesDirectory.appendingPathComponent(fileName))
+            try? FileManager.default.removeItem(at: NotesRepository.imagesDirectory.appendingPathComponent(fileName))
             imageCache.removeObject(forKey: fileName as NSString)
         }
         notes.removeAll { $0.id == note.id }
@@ -127,7 +112,7 @@ final class NoteStore: ObservableObject {
         let resized = image.resizedIfNeeded(maxDimension: 1600)
         guard let data = resized.jpegData(compressionQuality: 0.8) else { return nil }
         let fileName = "\(UUID().uuidString).jpg"
-        let url = imagesDirectory.appendingPathComponent(fileName)
+        let url = NotesRepository.imagesDirectory.appendingPathComponent(fileName)
         do {
             try data.write(to: url, options: .atomic)
             imageCache.setObject(resized, forKey: fileName as NSString)
@@ -141,60 +126,31 @@ final class NoteStore: ObservableObject {
         if let cached = imageCache.object(forKey: fileName as NSString) {
             return cached
         }
-        let url = imagesDirectory.appendingPathComponent(fileName)
+        let url = NotesRepository.imagesDirectory.appendingPathComponent(fileName)
         guard let data = try? Data(contentsOf: url), let image = UIImage(data: data) else { return nil }
         imageCache.setObject(image, forKey: fileName as NSString)
         return image
     }
 
     func deleteImage(fileName: String) {
-        try? FileManager.default.removeItem(at: imagesDirectory.appendingPathComponent(fileName))
+        try? FileManager.default.removeItem(at: NotesRepository.imagesDirectory.appendingPathComponent(fileName))
         imageCache.removeObject(forKey: fileName as NSString)
     }
 
     // MARK: - Persistence
-    //
-    // Never let a read failure silently wipe the user's notes. A future
-    // schema change, a partially-written file, or disk corruption should
-    // fall back to the last-known-good backup rather than resetting to [].
 
-    private func load() {
-        if let notes = Self.decodeNotes(from: fileURL) {
-            self.notes = notes
-            return
-        }
-        if let notes = Self.decodeNotes(from: backupFileURL) {
-            self.notes = notes
-            save() // restore the primary file from the backup we just recovered
-            return
-        }
-        notes = []
-    }
-
-    private static func decodeNotes(from url: URL) -> [TodoNote]? {
-        guard let data = try? Data(contentsOf: url) else { return nil }
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        if let wrapped = try? decoder.decode(PersistedNotes.self, from: data) {
-            return wrapped.notes
-        }
-        // Falls back to the pre-versioning format (a bare [TodoNote] array)
-        // so upgrading to the versioned format never loses existing data.
-        return try? decoder.decode([TodoNote].self, from: data)
+    /// Re-reads from disk. The widget extension (and its
+    /// `ToggleTodoItemIntent`) runs in a separate process, so when it
+    /// changes a note while this app isn't running, our in-memory `notes`
+    /// goes stale until we reload — call this when the app returns to
+    /// the foreground.
+    func reload() {
+        notes = NotesRepository.load()
     }
 
     private func save() {
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
-        let payload = PersistedNotes(version: Self.currentSchemaVersion, notes: notes)
-        guard let data = try? encoder.encode(payload) else { return }
-        // Keep one prior generation on disk before overwriting, so a bad
-        // write or a future decode failure has something to recover from.
-        if FileManager.default.fileExists(atPath: fileURL.path) {
-            try? FileManager.default.removeItem(at: backupFileURL)
-            try? FileManager.default.copyItem(at: fileURL, to: backupFileURL)
-        }
-        try? data.write(to: fileURL, options: .atomic)
+        NotesRepository.save(notes)
+        WidgetCenter.shared.reloadTimelines(ofKind: WidgetKind.todoNotes)
     }
 }
 
